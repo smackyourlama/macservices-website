@@ -181,15 +181,36 @@
       </section>
       <section class="section section-alt delivery-section" id="delivery">
         <div class="container delivery-shell">
+          <div class="delivery-section-head">
+            <span class="delivery-kicker">Pickup & Delivery</span>
+            <h2>Check your delivery fee before you schedule service.</h2>
+            <p>
+              Enter your address for a quick estimate from our Tecumseh shop, then call to lock in scheduling.
+            </p>
+          </div>
+
           <div class="delivery-app-grid">
             <section class="delivery-app-card delivery-form-card">
-              <h3>Get an instant quote</h3>
+              <div class="delivery-card-top">
+                <span class="delivery-card-eyebrow">Instant estimate</span>
+                <h3>Get an instant quote</h3>
+                <p class="delivery-card-intro">Fast estimate, clear pricing tiers, and a live route preview.</p>
+              </div>
+
               <form id="delivery-form" class="delivery-form">
                 <label for="delivery-address">Delivery address</label>
-                <input id="delivery-address" name="address" type="text" placeholder="4490 n. adrian hwy" required />
+                <input id="delivery-address" name="address" type="text" placeholder="4490 N Adrian Hwy, Adrian, MI" required />
                 <button class="btn delivery-submit" type="submit">Calculate Delivery Fee</button>
               </form>
               <p id="delivery-error" class="delivery-error" hidden></p>
+
+              <div class="delivery-tier-list" aria-label="Delivery pricing tiers">
+                <div class="delivery-tier"><span>0–5 miles</span><strong>$65</strong></div>
+                <div class="delivery-tier"><span>5–10 miles</span><strong>$75</strong></div>
+                <div class="delivery-tier"><span>10–20 miles</span><strong>$85</strong></div>
+                <div class="delivery-tier"><span>20+ miles</span><strong>$100</strong></div>
+              </div>
+
               <div class="delivery-help">
                 <p>Driving distance is preferred. We'll fall back to straight-line if routing fails.</p>
                 <p>Final delivery fee is confirmed once dispatch verifies the route and access details.</p>
@@ -198,11 +219,18 @@
 
             <section class="delivery-app-card delivery-results-card">
               <div class="delivery-results-header">
-                <h3>Result</h3>
+                <div>
+                  <span class="delivery-card-eyebrow">Quote summary</span>
+                  <h3>Result</h3>
+                </div>
+                <a class="btn btn-secondary btn-small delivery-call-btn" href="tel:5174236088">Call to schedule</a>
               </div>
 
               <div id="delivery-empty" class="delivery-empty-state">
-                Enter a delivery address to see the quote and route preview.
+                <div class="delivery-empty-inner">
+                  <strong>Ready when you are.</strong>
+                  <span>Enter a delivery address to see the quote, distance, and route preview.</span>
+                </div>
               </div>
 
               <div id="delivery-results" class="delivery-results" hidden>
