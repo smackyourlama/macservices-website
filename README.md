@@ -1,11 +1,11 @@
-# Mac Services Website
+# RangeRates
 
-Simple brochure-style website for Mac Services in Tecumseh, Michigan.
+RangeRates is the delivery distance and fee experience that fronts Mac Services' dispatch desk in Tecumseh, Michigan.
 
-## Business Details
-- **Name:** Mac Services
-- **Address:** 401 S Evans St, Tecumseh, MI
-- **Phone:** 517-423-6088
+## Business Context
+- **Parent team:** Mac Services (401 S Evans St, Tecumseh, MI)
+- **Product:** RangeRates delivery calculator + route preview
+- **Contact:** 517-423-6088
 
 ## Local Preview
 From this folder, run:
