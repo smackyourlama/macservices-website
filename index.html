@@ -199,17 +199,10 @@
 
               <form id="delivery-form" class="delivery-form">
                 <label for="delivery-address">Delivery address</label>
-                <input id="delivery-address" name="address" type="text" placeholder="4490 N Adrian Hwy, Adrian, MI" required />
+                <input id="delivery-address" name="address" type="text" placeholder="Enter your delivery address" required />
                 <button class="btn delivery-submit" type="submit">Calculate Delivery Fee</button>
               </form>
               <p id="delivery-error" class="delivery-error" hidden></p>
-
-              <div class="delivery-tier-list" aria-label="Delivery pricing tiers">
-                <div class="delivery-tier"><span>0–5 miles</span><strong>$65</strong></div>
-                <div class="delivery-tier"><span>5–10 miles</span><strong>$75</strong></div>
-                <div class="delivery-tier"><span>10–20 miles</span><strong>$85</strong></div>
-                <div class="delivery-tier"><span>20+ miles</span><strong>$100</strong></div>
-              </div>
 
               <div class="delivery-help">
                 <p>Driving distance is preferred. We'll fall back to straight-line if routing fails.</p>
@@ -246,13 +239,6 @@
                   <div id="delivery-map" class="delivery-map"></div>
                 </div>
 
-                <div class="delivery-copy-card">
-                  <div class="delivery-copy-head">
-                    <span>Copy summary</span>
-                    <button id="copy-summary" type="button" class="delivery-copy-btn">Copy</button>
-                  </div>
-                  <p id="copy-summary-text" class="delivery-copy-text"></p>
-                </div>
               </div>
             </section>
           </div>
@@ -292,8 +278,6 @@
         const errorEl = document.getElementById('delivery-error');
         const emptyEl = document.getElementById('delivery-empty');
         const resultsEl = document.getElementById('delivery-results');
-        const copyBtn = document.getElementById('copy-summary');
-        const copySummaryText = document.getElementById('copy-summary-text');
 
         const resultAddress = document.getElementById('result-address');
         const resultDistanceLabel = document.getElementById('result-distance-label');
@@ -446,7 +430,6 @@
           resultDistance.textContent = `${roundedMiles} miles`;
           resultTier.textContent = tier.label;
           resultPrice.textContent = `$${tier.price}`;
-          copySummaryText.textContent = `Delivery quote from ${ORIGIN_ADDRESS} to ${address}: ${roundedMiles} miles, ${tier.label}, $${tier.price}. ${FALLBACK_NOTE}`;
           emptyEl.hidden = true;
           resultsEl.hidden = false;
         }
