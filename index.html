@@ -194,7 +194,7 @@
               <div class="delivery-card-top">
                 <span class="delivery-card-eyebrow">Instant estimate</span>
                 <h3>Get your quote</h3>
-                <p class="delivery-card-intro">Simple pricing, fast estimate, and a route preview.</p>
+                <p class="delivery-card-intro">$50 for the first mile, then $5 per additional mile. Fast estimate plus a route preview.</p>
               </div>
 
               <form id="delivery-form" class="delivery-form">
@@ -230,7 +230,7 @@
                 <div class="delivery-results-list">
                   <div class="delivery-result-row"><span>Entered address</span><strong id="result-address"></strong></div>
                   <div class="delivery-result-row"><span id="result-distance-label">Distance (driving)</span><strong id="result-distance"></strong></div>
-                  <div class="delivery-result-row"><span>Pricing tier</span><strong id="result-tier"></strong></div>
+                  <div class="delivery-result-row"><span>Pricing detail</span><strong id="result-tier"></strong></div>
                   <div class="delivery-result-row delivery-result-total"><span>Delivery charge</span><strong id="result-price"></strong></div>
                 </div>
 
@@ -266,12 +266,9 @@
         const ORIGIN_ADDRESS = '401 S Evans St, Tecumseh, MI 49286';
         const ORIGIN_COORDS = [-83.9473034, 42.0067238];
         const FALLBACK_NOTE = 'Final delivery fee is confirmed once dispatch verifies the route and access details.';
-        const PRICING_TIERS = [
-          { label: 'Within 5 miles', maxMiles: 5, price: 65 },
-          { label: 'Up to 10 miles', maxMiles: 10, price: 75 },
-          { label: 'Up to 20 miles', maxMiles: 20, price: 85 },
-          { label: 'Over 20 miles', maxMiles: null, price: 100 }
-        ];
+        const BASE_RADIUS_MILES = 1;
+        const BASE_PRICE = 50;
+        const ADDITIONAL_MILE_RATE = 5;
 
         const form = document.getElementById('delivery-form');
         const addressInput = document.getElementById('delivery-address');
@@ -317,8 +314,14 @@
           return R * c;
         }
 
-        function getTier(distanceMiles) {
-          return PRICING_TIERS.find((tier) => tier.maxMiles === null || distanceMiles <= tier.maxMiles) || PRICING_TIERS[PRICING_TIERS.length - 1];
+        function calculatePricing(distanceMiles) {
+          const extraMiles = Math.max(0, Math.ceil(distanceMiles - BASE_RADIUS_MILES));
+          const price = BASE_PRICE + extraMiles * ADDITIONAL_MILE_RATE;
+          const description =
+            extraMiles === 0
+              ? `Within ${BASE_RADIUS_MILES}-mile base radius`
+              : `${BASE_RADIUS_MILES}-mile base + ${extraMiles} additional mile${extraMiles === 1 ? '' : 's'} @ $${ADDITIONAL_MILE_RATE}/mile`;
+          return { description, price };
         }
 
         async function geocode(address) {
@@ -423,13 +426,13 @@
           setTimeout(() => map.invalidateSize(), 50);
         }
 
-        function renderQuote(address, distanceMiles, tier, distanceSource) {
+        function renderQuote(address, distanceMiles, pricing, distanceSource) {
           const roundedMiles = Number(distanceMiles.toFixed(2));
           resultAddress.textContent = address;
           resultDistanceLabel.textContent = distanceSource === 'driving' ? 'Distance (driving)' : 'Distance (straight-line fallback)';
           resultDistance.textContent = `${roundedMiles} miles`;
-          resultTier.textContent = tier.label;
-          resultPrice.textContent = `$${tier.price}`;
+          resultTier.textContent = pricing.description;
+          resultPrice.textContent = `$${pricing.price}`;
           emptyEl.hidden = true;
           resultsEl.hidden = false;
         }
@@ -453,30 +456,15 @@
             const route = await getDrivingRoute(ORIGIN_COORDS, destination.coordinates);
             const distanceMiles = route ? route.miles : haversineMiles(ORIGIN_COORDS, destination.coordinates);
             const source = route ? 'driving' : 'straight-line';
-            const tier = getTier(distanceMiles);
+            const pricing = calculatePricing(distanceMiles);
 
-            renderQuote(destination.name, distanceMiles, tier, source);
+            renderQuote(destination.name, distanceMiles, pricing, source);
             renderMap(ORIGIN_COORDS, destination.coordinates, route && route.coordinates ? route.coordinates : null);
           } catch (error) {
             showError(error instanceof Error ? error.message : 'Unable to calculate the delivery fee right now.');
           } finally {
             submitButton.disabled = false;
             submitButton.textContent = originalText;
-          }
-        });
-
-        copyBtn.addEventListener('click', async () => {
-          try {
-            await navigator.clipboard.writeText(copySummaryText.textContent || '');
-            copyBtn.textContent = 'Copied';
-            setTimeout(() => {
-              copyBtn.textContent = 'Copy';
-            }, 1500);
-          } catch {
-            copyBtn.textContent = 'Copy failed';
-            setTimeout(() => {
-              copyBtn.textContent = 'Copy';
-            }, 1500);
           }
         });
 
