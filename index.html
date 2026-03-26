@@ -11,6 +11,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -174,36 +180,69 @@
         </div>
       </section>
       <section class="section section-alt" id="delivery">
-        <div class="container split-grid">
-          <div>
+        <div class="container">
+          <div class="section-heading delivery-heading">
             <span class="pill pill-soft">Pickup & Delivery</span>
-            <h2>Distance-based delivery support for your equipment</h2>
-            <p>Need help moving a mower, generator, or other gear? Mac Services can schedule pickup or drop-off runs and price them using our new Delivery Fee Calculator powered by live OpenStreetMap routing.</p>
-            <ul class="map-points">
-              <li>Quotes originate from 401 S Evans St in Tecumseh for transparent mileage.</li>
-              <li>Driving distance is calculated with OSRM; we fall back to straight-line miles if routing is unavailable.</li>
-              <li>Tiered pricing keeps delivery charges predictable before a truck is dispatched.</li>
-            </ul>
+            <h2>Delivery Fee Calculator</h2>
+            <p>
+              Enter the delivery address below to calculate the fee from 401 S Evans St, Tecumseh, MI using live map data.
+            </p>
           </div>
-          <div class="map-card map-card-content">
-            <span class="pill pill-soft">Delivery Fee Calculator</span>
-            <h3>Current delivery tiers</h3>
-            <div class="delivery-tier-list">
-              <div class="delivery-tier"><span>Within 5 miles</span><strong>$65</strong></div>
-              <div class="delivery-tier"><span>Up to 10 miles</span><strong>$75</strong></div>
-              <div class="delivery-tier"><span>Up to 20 miles</span><strong>$85</strong></div>
-              <div class="delivery-tier"><span>20+ miles</span><strong>$100+</strong></div>
-            </div>
-            <p class="delivery-note">Final delivery fee is confirmed once dispatch verifies the route, site access, and any special handling needs.</p>
-            <ul class="delivery-steps">
-              <li>Share the drop-off address when you call.</li>
-              <li>We run the distance through the calculator for an instant quote.</li>
-              <li>Confirm the time, access details, and payment when we schedule the run.</li>
-            </ul>
-            <div class="hero-actions">
-              <a class="btn" href="tel:5174236088">Schedule Pickup / Delivery</a>
-              <a class="btn btn-secondary" href="https://github.com/smackyourlama/delivery-fee-calculator" target="_blank" rel="noreferrer">View the Calculator</a>
-            </div>
+
+          <div class="delivery-app-grid">
+            <section class="delivery-app-card">
+              <h3>Get an instant quote</h3>
+              <form id="delivery-form" class="delivery-form">
+                <label for="delivery-address">Delivery address</label>
+                <input id="delivery-address" name="address" type="text" placeholder="123 Main St, Ann Arbor, MI" required />
+                <button class="btn delivery-submit" type="submit">Calculate Delivery Fee</button>
+              </form>
+              <p id="delivery-error" class="delivery-error" hidden></p>
+              <div class="delivery-help">
+                <p>Driving distance is preferred. If routing is unavailable, the calculator falls back to straight-line miles.</p>
+                <p>Final delivery fee is confirmed once dispatch verifies the route and access details.</p>
+              </div>
+
+              <div class="delivery-tier-list">
+                <div class="delivery-tier"><span>Within 5 miles</span><strong>$65</strong></div>
+                <div class="delivery-tier"><span>Up to 10 miles</span><strong>$75</strong></div>
+                <div class="delivery-tier"><span>Up to 20 miles</span><strong>$85</strong></div>
+                <div class="delivery-tier"><span>Over 20 miles</span><strong>$100</strong></div>
+              </div>
+            </section>
+
+            <section class="delivery-app-card delivery-results-card">
+              <div class="delivery-results-header">
+                <h3>Result</h3>
+                <a class="btn btn-secondary btn-small" href="tel:5174236088">Call to Schedule</a>
+              </div>
+
+              <div id="delivery-empty" class="delivery-empty-state">
+                Results will appear here after you calculate a delivery fee.
+              </div>
+
+              <div id="delivery-results" class="delivery-results" hidden>
+                <div class="delivery-results-list">
+                  <div class="delivery-result-row"><span>Entered address</span><strong id="result-address"></strong></div>
+                  <div class="delivery-result-row"><span>Distance</span><strong id="result-distance"></strong></div>
+                  <div class="delivery-result-row"><span>Pricing tier</span><strong id="result-tier"></strong></div>
+                  <div class="delivery-result-row delivery-result-total"><span>Delivery charge</span><strong id="result-price"></strong></div>
+                </div>
+
+                <div class="delivery-map-wrap">
+                  <p class="delivery-map-label">Route preview</p>
+                  <div id="delivery-map" class="delivery-map"></div>
+                </div>
+
+                <div class="delivery-copy-card">
+                  <div class="delivery-copy-head">
+                    <span>Copy summary</span>
+                    <button id="copy-summary" type="button" class="delivery-copy-btn">Copy</button>
+                  </div>
+                  <p id="copy-summary-text" class="delivery-copy-text"></p>
+                </div>
+              </div>
+            </section>
           </div>
         </div>
       </section>
@@ -218,5 +257,233 @@
         <a class="btn btn-small" href="tel:5174236088">Call 517-423-6088</a>
       </div>
     </footer>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script>
+      (() => {
+        const ORIGIN_ADDRESS = '401 S Evans St, Tecumseh, MI 49286';
+        const ORIGIN_COORDS = [-83.9473034, 42.0067238];
+        const FALLBACK_NOTE = 'Final delivery fee is confirmed once dispatch verifies the route and access details.';
+        const PRICING_TIERS = [
+          { label: 'Within 5 miles', maxMiles: 5, price: 65 },
+          { label: 'Up to 10 miles', maxMiles: 10, price: 75 },
+          { label: 'Up to 20 miles', maxMiles: 20, price: 85 },
+          { label: 'Over 20 miles', maxMiles: null, price: 100 }
+        ];
+
+        const form = document.getElementById('delivery-form');
+        const addressInput = document.getElementById('delivery-address');
+        const errorEl = document.getElementById('delivery-error');
+        const emptyEl = document.getElementById('delivery-empty');
+        const resultsEl = document.getElementById('delivery-results');
+        const copyBtn = document.getElementById('copy-summary');
+        const copySummaryText = document.getElementById('copy-summary-text');
+
+        const resultAddress = document.getElementById('result-address');
+        const resultDistance = document.getElementById('result-distance');
+        const resultTier = document.getElementById('result-tier');
+        const resultPrice = document.getElementById('result-price');
+
+        let map;
+        let routeLine;
+        let markers = [];
+
+        function showError(message) {
+          errorEl.textContent = message;
+          errorEl.hidden = false;
+        }
+
+        function clearError() {
+          errorEl.hidden = true;
+          errorEl.textContent = '';
+        }
+
+        function toRadians(value) {
+          return (value * Math.PI) / 180;
+        }
+
+        function haversineMiles(origin, destination) {
+          const [lon1, lat1] = origin;
+          const [lon2, lat2] = destination;
+          const R = 3958.8;
+          const dLat = toRadians(lat2 - lat1);
+          const dLon = toRadians(lon2 - lon1);
+          const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          return R * c;
+        }
+
+        function getTier(distanceMiles) {
+          return PRICING_TIERS.find((tier) => tier.maxMiles === null || distanceMiles <= tier.maxMiles) || PRICING_TIERS[PRICING_TIERS.length - 1];
+        }
+
+        async function geocode(address) {
+          const url = new URL('https://nominatim.openstreetmap.org/search');
+          url.searchParams.set('q', address);
+          url.searchParams.set('format', 'jsonv2');
+          url.searchParams.set('limit', '1');
+
+          const response = await fetch(url.toString(), {
+            headers: {
+              Accept: 'application/json'
+            }
+          });
+
+          if (!response.ok) throw new Error('Unable to reach geocoding service right now.');
+          const payload = await response.json();
+          const feature = payload && payload[0];
+          if (!feature) throw new Error('No matching address was found. Please try a more complete address.');
+
+          const lon = Number(feature.lon);
+          const lat = Number(feature.lat);
+          if (Number.isNaN(lat) || Number.isNaN(lon)) throw new Error('The map service returned invalid coordinates.');
+
+          return {
+            name: feature.display_name || address,
+            coordinates: [lon, lat]
+          };
+        }
+
+        async function getDrivingRoute(origin, destination) {
+          const coords = `${origin[0]},${origin[1]};${destination[0]},${destination[1]}`;
+          const url = new URL(`https://router.project-osrm.org/route/v1/driving/${coords}`);
+          url.searchParams.set('overview', 'full');
+          url.searchParams.set('geometries', 'geojson');
+          url.searchParams.set('alternatives', 'false');
+
+          const response = await fetch(url.toString());
+          if (!response.ok) return null;
+          const payload = await response.json();
+          const route = payload && payload.routes && payload.routes[0];
+          if (!route || typeof route.distance !== 'number') return null;
+
+          return {
+            miles: route.distance / 1609.34,
+            coordinates: route.geometry && route.geometry.coordinates ? route.geometry.coordinates : null
+          };
+        }
+
+        function ensureMap() {
+          if (map) return;
+          map = L.map('delivery-map', { scrollWheelZoom: false, zoomControl: false });
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+          }).addTo(map);
+        }
+
+        function clearMapLayers() {
+          if (routeLine) {
+            map.removeLayer(routeLine);
+            routeLine = null;
+          }
+          markers.forEach((marker) => map.removeLayer(marker));
+          markers = [];
+        }
+
+        function renderMap(origin, destination, routeCoordinates) {
+          ensureMap();
+          clearMapLayers();
+
+          const originLatLng = [origin[1], origin[0]];
+          const destinationLatLng = [destination[1], destination[0]];
+
+          const originMarker = L.circleMarker(originLatLng, {
+            radius: 8,
+            color: '#fb923c',
+            fillColor: '#fed7aa',
+            fillOpacity: 0.95,
+            weight: 2
+          }).addTo(map);
+
+          const destinationMarker = L.circleMarker(destinationLatLng, {
+            radius: 8,
+            color: '#0ea5e9',
+            fillColor: '#bae6fd',
+            fillOpacity: 0.95,
+            weight: 2
+          }).addTo(map);
+
+          markers.push(originMarker, destinationMarker);
+
+          const points = routeCoordinates && routeCoordinates.length
+            ? routeCoordinates.map(([lon, lat]) => [lat, lon])
+            : [originLatLng, destinationLatLng];
+
+          routeLine = L.polyline(points, {
+            color: '#2f6b45',
+            weight: 4,
+            opacity: 0.9
+          }).addTo(map);
+
+          map.fitBounds(L.latLngBounds(points), { padding: [28, 28], maxZoom: 13 });
+          setTimeout(() => map.invalidateSize(), 50);
+        }
+
+        function renderQuote(address, distanceMiles, tier, distanceSource) {
+          const roundedMiles = Number(distanceMiles.toFixed(2));
+          resultAddress.textContent = address;
+          resultDistance.textContent = `${roundedMiles} miles (${distanceSource === 'driving' ? 'driving route' : 'straight-line fallback'})`;
+          resultTier.textContent = tier.label;
+          resultPrice.textContent = `$${tier.price}`;
+
+          copySummaryText.textContent = `Delivery quote from ${ORIGIN_ADDRESS} to ${address}: ${roundedMiles} miles, ${tier.label}, $${tier.price}. ${FALLBACK_NOTE}`;
+          emptyEl.hidden = true;
+          resultsEl.hidden = false;
+        }
+
+        form.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          clearError();
+          const address = addressInput.value.trim();
+          if (!address) {
+            showError('Please enter a delivery address.');
+            return;
+          }
+
+          const submitButton = form.querySelector('button[type="submit"]');
+          const originalText = submitButton.textContent;
+          submitButton.disabled = true;
+          submitButton.textContent = 'Calculating...';
+
+          try {
+            const destination = await geocode(address);
+            const route = await getDrivingRoute(ORIGIN_COORDS, destination.coordinates);
+            const distanceMiles = route ? route.miles : haversineMiles(ORIGIN_COORDS, destination.coordinates);
+            const source = route ? 'driving' : 'straight-line';
+            const tier = getTier(distanceMiles);
+
+            renderQuote(destination.name, distanceMiles, tier, source);
+            renderMap(ORIGIN_COORDS, destination.coordinates, route && route.coordinates ? route.coordinates : null);
+          } catch (error) {
+            showError(error instanceof Error ? error.message : 'Unable to calculate the delivery fee right now.');
+          } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = originalText;
+          }
+        });
+
+        copyBtn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(copySummaryText.textContent || '');
+            copyBtn.textContent = 'Copied';
+            setTimeout(() => {
+              copyBtn.textContent = 'Copy';
+            }, 1500);
+          } catch {
+            copyBtn.textContent = 'Copy failed';
+            setTimeout(() => {
+              copyBtn.textContent = 'Copy';
+            }, 1500);
+          }
+        });
+      })();
+    </script>
   </body>
 </html>
