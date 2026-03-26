@@ -182,10 +182,10 @@
       <section class="section section-alt delivery-section" id="delivery">
         <div class="container delivery-shell">
           <div class="delivery-section-head">
-            <span class="delivery-kicker">Pickup & Delivery</span>
+            <span class="pill pill-soft">Pickup & Delivery</span>
             <h2>Check your delivery fee before you schedule service.</h2>
             <p>
-              Enter your address for a quick estimate from our Tecumseh shop, then call to lock in scheduling.
+              Enter your address for a quick estimate from our Tecumseh shop, then call to confirm scheduling.
             </p>
           </div>
 
@@ -193,8 +193,8 @@
             <section class="delivery-app-card delivery-form-card">
               <div class="delivery-card-top">
                 <span class="delivery-card-eyebrow">Instant estimate</span>
-                <h3>Get an instant quote</h3>
-                <p class="delivery-card-intro">Fast estimate, clear pricing tiers, and a live route preview.</p>
+                <h3>Get your quote</h3>
+                <p class="delivery-card-intro">Simple pricing, fast estimate, and a route preview.</p>
               </div>
 
               <form id="delivery-form" class="delivery-form">
@@ -408,18 +408,18 @@
           const destinationLatLng = [destination[1], destination[0]];
 
           const originMarker = L.circleMarker(originLatLng, {
-            radius: 8,
-            color: '#fb923c',
-            fillColor: '#fed7aa',
-            fillOpacity: 0.95,
+            radius: 7,
+            color: '#234f34',
+            fillColor: '#2f6b45',
+            fillOpacity: 0.98,
             weight: 2
           }).addTo(map);
 
           const destinationMarker = L.circleMarker(destinationLatLng, {
-            radius: 8,
-            color: '#0ea5e9',
-            fillColor: '#bae6fd',
-            fillOpacity: 0.95,
+            radius: 7,
+            color: '#b2832f',
+            fillColor: '#d7a94d',
+            fillOpacity: 0.98,
             weight: 2
           }).addTo(map);
 
@@ -431,8 +431,8 @@
 
           routeLine = L.polyline(points, {
             color: '#2f6b45',
-            weight: 4,
-            opacity: 0.9
+            weight: 5,
+            opacity: 0.92
           }).addTo(map);
 
           map.fitBounds(L.latLngBounds(points), { padding: [28, 28], maxZoom: 13 });
@@ -446,7 +446,6 @@
           resultDistance.textContent = `${roundedMiles} miles`;
           resultTier.textContent = tier.label;
           resultPrice.textContent = `$${tier.price}`;
-
           copySummaryText.textContent = `Delivery quote from ${ORIGIN_ADDRESS} to ${address}: ${roundedMiles} miles, ${tier.label}, $${tier.price}. ${FALLBACK_NOTE}`;
           emptyEl.hidden = true;
           resultsEl.hidden = false;
@@ -497,7 +496,9 @@
             }, 1500);
           }
         });
+
       })();
     </script>
   </body>
 </html>
+
