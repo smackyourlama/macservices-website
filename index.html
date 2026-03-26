@@ -179,52 +179,36 @@
           </div>
         </div>
       </section>
-      <section class="section section-alt" id="delivery">
-        <div class="container">
-          <div class="section-heading delivery-heading">
-            <span class="pill pill-soft">Pickup & Delivery</span>
-            <h2>Delivery Fee Calculator</h2>
-            <p>
-              Enter the delivery address below to calculate the fee from 401 S Evans St, Tecumseh, MI using live map data.
-            </p>
-          </div>
-
+      <section class="section section-alt delivery-section" id="delivery">
+        <div class="container delivery-shell">
           <div class="delivery-app-grid">
-            <section class="delivery-app-card">
+            <section class="delivery-app-card delivery-form-card">
               <h3>Get an instant quote</h3>
               <form id="delivery-form" class="delivery-form">
                 <label for="delivery-address">Delivery address</label>
-                <input id="delivery-address" name="address" type="text" placeholder="123 Main St, Ann Arbor, MI" required />
+                <input id="delivery-address" name="address" type="text" placeholder="4490 n. adrian hwy" required />
                 <button class="btn delivery-submit" type="submit">Calculate Delivery Fee</button>
               </form>
               <p id="delivery-error" class="delivery-error" hidden></p>
               <div class="delivery-help">
-                <p>Driving distance is preferred. If routing is unavailable, the calculator falls back to straight-line miles.</p>
+                <p>Driving distance is preferred. We'll fall back to straight-line if routing fails.</p>
                 <p>Final delivery fee is confirmed once dispatch verifies the route and access details.</p>
-              </div>
-
-              <div class="delivery-tier-list">
-                <div class="delivery-tier"><span>Within 5 miles</span><strong>$65</strong></div>
-                <div class="delivery-tier"><span>Up to 10 miles</span><strong>$75</strong></div>
-                <div class="delivery-tier"><span>Up to 20 miles</span><strong>$85</strong></div>
-                <div class="delivery-tier"><span>Over 20 miles</span><strong>$100</strong></div>
               </div>
             </section>
 
             <section class="delivery-app-card delivery-results-card">
               <div class="delivery-results-header">
                 <h3>Result</h3>
-                <a class="btn btn-secondary btn-small" href="tel:5174236088">Call to Schedule</a>
               </div>
 
               <div id="delivery-empty" class="delivery-empty-state">
-                Results will appear here after you calculate a delivery fee.
+                Enter a delivery address to see the quote and route preview.
               </div>
 
               <div id="delivery-results" class="delivery-results" hidden>
                 <div class="delivery-results-list">
                   <div class="delivery-result-row"><span>Entered address</span><strong id="result-address"></strong></div>
-                  <div class="delivery-result-row"><span>Distance</span><strong id="result-distance"></strong></div>
+                  <div class="delivery-result-row"><span id="result-distance-label">Distance (driving)</span><strong id="result-distance"></strong></div>
                   <div class="delivery-result-row"><span>Pricing tier</span><strong id="result-tier"></strong></div>
                   <div class="delivery-result-row delivery-result-total"><span>Delivery charge</span><strong id="result-price"></strong></div>
                 </div>
@@ -284,6 +268,7 @@
         const copySummaryText = document.getElementById('copy-summary-text');
 
         const resultAddress = document.getElementById('result-address');
+        const resultDistanceLabel = document.getElementById('result-distance-label');
         const resultDistance = document.getElementById('result-distance');
         const resultTier = document.getElementById('result-tier');
         const resultPrice = document.getElementById('result-price');
@@ -429,7 +414,8 @@
         function renderQuote(address, distanceMiles, tier, distanceSource) {
           const roundedMiles = Number(distanceMiles.toFixed(2));
           resultAddress.textContent = address;
-          resultDistance.textContent = `${roundedMiles} miles (${distanceSource === 'driving' ? 'driving route' : 'straight-line fallback'})`;
+          resultDistanceLabel.textContent = distanceSource === 'driving' ? 'Distance (driving)' : 'Distance (straight-line fallback)';
+          resultDistance.textContent = `${roundedMiles} miles`;
           resultTier.textContent = tier.label;
           resultPrice.textContent = `$${tier.price}`;
 
