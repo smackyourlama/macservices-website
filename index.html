@@ -269,6 +269,16 @@
         const BASE_RADIUS_MILES = 1;
         const BASE_PRICE = 50;
         const ADDITIONAL_MILE_RATE = 5;
+        const milesFormatter = new Intl.NumberFormat('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+        const currencyFormatter = new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
 
         const form = document.getElementById('delivery-form');
         const addressInput = document.getElementById('delivery-address');
@@ -314,13 +324,19 @@
           return R * c;
         }
 
+        function formatMiles(value) {
+          return Number.isInteger(value) ? value.toString() : value.toFixed(2);
+        }
+
         function calculatePricing(distanceMiles) {
-          const extraMiles = Math.max(0, Math.ceil(distanceMiles - BASE_RADIUS_MILES));
-          const price = BASE_PRICE + extraMiles * ADDITIONAL_MILE_RATE;
+          const extraMilesRaw = Math.max(0, distanceMiles - BASE_RADIUS_MILES);
+          const extraMiles = Math.round(extraMilesRaw * 100) / 100;
+          const extraCost = Math.round(extraMiles * ADDITIONAL_MILE_RATE * 100) / 100;
+          const price = Math.round((BASE_PRICE + extraCost) * 100) / 100;
           const description =
             extraMiles === 0
               ? `Within ${BASE_RADIUS_MILES}-mile base radius`
-              : `${BASE_RADIUS_MILES}-mile base + ${extraMiles} additional mile${extraMiles === 1 ? '' : 's'} @ $${ADDITIONAL_MILE_RATE}/mile`;
+              : `${BASE_RADIUS_MILES}-mile base + ${formatMiles(extraMiles)} additional mile${extraMiles === 1 ? '' : 's'} @ $${ADDITIONAL_MILE_RATE}/mile`;
           return { description, price };
         }
 
@@ -427,12 +443,12 @@
         }
 
         function renderQuote(address, distanceMiles, pricing, distanceSource) {
-          const roundedMiles = Number(distanceMiles.toFixed(2));
+          const formattedMiles = milesFormatter.format(distanceMiles);
           resultAddress.textContent = address;
           resultDistanceLabel.textContent = distanceSource === 'driving' ? 'Distance (driving)' : 'Distance (straight-line fallback)';
-          resultDistance.textContent = `${roundedMiles} miles`;
+          resultDistance.textContent = `${formattedMiles} miles`;
           resultTier.textContent = pricing.description;
-          resultPrice.textContent = `$${pricing.price}`;
+          resultPrice.textContent = currencyFormatter.format(pricing.price);
           emptyEl.hidden = true;
           resultsEl.hidden = false;
         }
