@@ -340,31 +340,83 @@
           return { description, price };
         }
 
+        async function fetchJsonWithTimeout(url, options = {}, timeout = 8000) {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), timeout);
+          try {
+            const response = await fetch(url, {
+              ...options,
+              signal: controller.signal
+            });
+            if (!response.ok) throw new Error('Request failed');
+            return await response.json();
+          } finally {
+            clearTimeout(timer);
+          }
+        }
+
+        function formatPhotonLabel(properties, fallbackAddress) {
+          const bits = [
+            properties.name,
+            properties.housenumber && properties.street ? `${properties.housenumber} ${properties.street}` : properties.street,
+            properties.city || properties.county,
+            properties.state,
+            properties.country
+          ].filter(Boolean);
+          return bits.length ? bits.join(', ') : fallbackAddress;
+        }
+
         async function geocode(address) {
-          const url = new URL('https://nominatim.openstreetmap.org/search');
-          url.searchParams.set('q', address);
-          url.searchParams.set('format', 'jsonv2');
-          url.searchParams.set('limit', '1');
-
-          const response = await fetch(url.toString(), {
-            headers: {
-              Accept: 'application/json'
+          const providers = [
+            async () => {
+              const url = new URL('https://photon.komoot.io/api/');
+              url.searchParams.set('q', address);
+              url.searchParams.set('limit', '1');
+              const payload = await fetchJsonWithTimeout(url.toString(), {
+                headers: { Accept: 'application/json' }
+              });
+              const feature = payload && payload.features && payload.features[0];
+              if (!feature || !feature.geometry || !Array.isArray(feature.geometry.coordinates)) {
+                throw new Error('No matching address was found.');
+              }
+              const [lon, lat] = feature.geometry.coordinates;
+              return {
+                name: formatPhotonLabel(feature.properties || {}, address),
+                coordinates: [Number(lon), Number(lat)]
+              };
+            },
+            async () => {
+              const url = new URL('https://nominatim.openstreetmap.org/search');
+              url.searchParams.set('q', address);
+              url.searchParams.set('format', 'jsonv2');
+              url.searchParams.set('limit', '1');
+              const payload = await fetchJsonWithTimeout(url.toString(), {
+                headers: { Accept: 'application/json' }
+              });
+              const feature = payload && payload[0];
+              if (!feature) throw new Error('No matching address was found.');
+              return {
+                name: feature.display_name || address,
+                coordinates: [Number(feature.lon), Number(feature.lat)]
+              };
             }
-          });
+          ];
 
-          if (!response.ok) throw new Error('Unable to reach geocoding service right now.');
-          const payload = await response.json();
-          const feature = payload && payload[0];
-          if (!feature) throw new Error('No matching address was found. Please try a more complete address.');
+          let lastError = null;
+          for (const provider of providers) {
+            try {
+              const result = await provider();
+              const [lon, lat] = result.coordinates;
+              if (Number.isNaN(lat) || Number.isNaN(lon)) {
+                throw new Error('The map service returned invalid coordinates.');
+              }
+              return result;
+            } catch (error) {
+              lastError = error;
+            }
+          }
 
-          const lon = Number(feature.lon);
-          const lat = Number(feature.lat);
-          if (Number.isNaN(lat) || Number.isNaN(lon)) throw new Error('The map service returned invalid coordinates.');
-
-          return {
-            name: feature.display_name || address,
-            coordinates: [lon, lat]
-          };
+          throw new Error(lastError instanceof Error ? lastError.message : 'Unable to reach geocoding service right now.');
         }
 
         async function getDrivingRoute(origin, destination) {
